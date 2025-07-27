@@ -5,12 +5,16 @@ It is so brilliant how far you can go in building zero-knowledge with just ECC p
 
 We start first by building our arithmetic circuit in an R1CS format:
 ```math
-v = x^2 \\
+v = x^2
+```
+```math
 y = x*v + 5x + 5
 ```
 To make our life easier, we convert this to the following R1CS to have it in the form $O*a = La * Ra$:
 ```math
-v = x^2 \\
+v = x^2
+```
+```math
 y - 5x - 5 = x*v
 ```
 Our witness vector is $a = [1, y, v, x]$
