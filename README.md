@@ -1,4 +1,9 @@
-# (Not so) ZK for R1CS
+# WIP
+The following construction is not yet complete and is work-in-progress. Eventually, we will be there where we have a fully-working ZK construction.
+
+> Example and reasoning are inspired from my journey reading [ZK-Book](https://rareskills.io/zk-book)
+
+## Step1: (Not so) ZK for R1CS
 
 It is so brilliant how far you can go in building zero-knowledge with just ECC points and pairings. The code in [main.go](./main.go) is a (not so) zk code that proves the following statement:
 > I know a number `x` which is a solution for $x^3 + 5x + 5 = 155$
@@ -68,4 +73,6 @@ Now, the prover sends the above 6 points to the verifier and the latter calculat
 
 If both the above verifications pass, then the prover has sent a valid proof and he knows the number $x$.
 
-> Example and reasoning are inspired from my journey reading [ZK-Book](https://rareskills.io/zk-book)
+### What we need to solve in next steps
+1. The construction is not zero-knowledge secure. A verifier, by doing guesses, can infer the witness $a$ by simply multiplying his guess with $G_1$ and $G_2$ and comparing the result with the points sent by the prover.
+2. Definitely, the construction is not succinct. The verifier needs to do two pairings in our example to check the proof. We want to have a $O(1)$ verification complexity
