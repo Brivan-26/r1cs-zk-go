@@ -63,3 +63,5 @@ Now, the prover sends the above 6 points to the verifier and the latter calculat
 2. $e(5G1, 155G2) == e(125G1, G2)$
 
 If both the above verifications pass, then the prover has sent a valid proof and he knows the number $x$.
+
+> Example and reasoning are inspired from my journey reading [ZK-Book](https://rareskills.io/zk-book)
