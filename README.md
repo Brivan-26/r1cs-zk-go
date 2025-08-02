@@ -1,11 +1,14 @@
 # WIP
+
 The following construction is not yet complete and is work-in-progress. Eventually, we will be there where we have a fully-working ZK construction.
 
 > Example and reasoning are inspired from my journey reading [ZK-Book](https://rareskills.io/zk-book)
 
 ## Step1: (Not so) ZK for R1CS
 
-It is so brilliant how far you can go in building zero-knowledge with just ECC points and pairings. The code in [main.go](./main.go) is a (not so) zk code that proves the following statement:
+It is so brilliant how far you can go in building zero-knowledge with just ECC points and pairings. This repository is an ongoing implementation of ZK construction and it supports any problem statement that can be written as a set of constraints (circuit). You only need to adapt the circuit matrices ($L$, $R$, $O$ in `main.go`). 
+
+The code in [main.go](./main.go) is a (not so) zk code that proves the following statement:
 > I know a number `x` which is a solution for $x^3 + 5x + 5 = 155$
 
 We start first by building our arithmetic circuit in an R1CS format:

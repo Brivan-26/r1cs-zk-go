@@ -1,5 +1,7 @@
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=
 github.com/cloudflare/circl v1.6.1/go.mod h1:uddAzsPgqdMAYatqJ0lsjX1oECcQLIlRpzZh3pJrofs=
+gitlab.com/oelmekki/matrix v0.0.0-20230709100531-36fba5ce31d0 h1:/oEzS9kl2lZabEf0mTIt2tbskp5izmKQr3txxcJ8e3E=
+gitlab.com/oelmekki/matrix v0.0.0-20230709100531-36fba5ce31d0/go.mod h1:c6p4Ed0ej++HtE/6V7CO2U899Ve62vmLZVg1lgVGpxU=
 golang.org/x/crypto v0.11.1-0.20230711161743-2e82bdd1719d h1:LiA25/KWKuXfIq5pMIBq1s5hz3HQxhJJSu/SUGlD+SM=
 golang.org/x/crypto v0.11.1-0.20230711161743-2e82bdd1719d/go.mod h1:xgJhtzW8F9jGdVFWZESrid1U1bjeNy4zgy5cRr/CIio=
 golang.org/x/sys v0.10.0 h1:SqMFp9UcQJZa+pmYuAKjd9xq1f0j5rLcDIk0mj4qAsA=
