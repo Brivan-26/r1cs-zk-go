@@ -49,9 +49,11 @@ func main() {
 		},
 	)
 
-	l, r, o := prove(L, R, O)
+	
 
-	if !verifyProof(l, o, r) {
+	A, B, C := prove(L, R, O)
+
+	if !verifyProof(A, C, B) {
 		panic("Invalid proof!")
 	}
 
