@@ -1,62 +1,58 @@
 package main 
 
 import (
-	"github.com/cloudflare/circl/ecc/bls12381"
+	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"math/rand"
     "time"
+	"math/big"
 )
-func generateSRS(n1, n2, n int) ([]bls12381.G1, []bls12381.G2, []bls12381.G1){
-
+func generateSRS(n1, n2, n int) ([]curve.G1Affine, []curve.G2Affine, []curve.G1Affine){
+	_, _, g1Gen, g2Gen := curve.Generators()
 	// ABSOLUTELY NOT SAFE RANDOM GENERATION
 	rand.Seed(time.Now().UnixNano())
-    r := rand.Intn(1000000000000) 
-	
-	var tau bls12381.Scalar 
-	tau.SetUint64(uint64(r))
+	tau := big.NewInt(int64(rand.Intn(1000000000000)))
 
-	ret1 := make([]bls12381.G1, n1)
-	ret2 := make([]bls12381.G2, n1)
-	ret3 := make([]bls12381.G1, n2)
+
+	ret1 := make([]curve.G1Affine, n1)
+	ret2 := make([]curve.G2Affine, n1)
+	ret3 := make([]curve.G1Affine, n2)
 	
 	// Generate Omega
-	point1 := bls12381.G1Generator()
-	ret1[0] = *point1
+	ret1[0] = g1Gen
 	for i:=1; i < n1; i++ {
-		var newPoint bls12381.G1
-		newPoint.ScalarMult(&tau, point1)
+		tau_exp := new(big.Int).Exp(tau, big.NewInt(int64(i)), nil)
+		var newPoint curve.G1Affine
+		newPoint.ScalarMultiplicationBase(tau_exp)
 		ret1[i] = newPoint
-		point1 = &newPoint
 	}
 
 	// Generate Theta
-	point2 := bls12381.G2Generator()
-	ret2[0] = *point2
+	ret2[0] = g2Gen
 	for i:=1; i < n1; i++ {
-		var newPoint bls12381.G2
-		newPoint.ScalarMult(&tau, point2)
+		tau_exp := new(big.Int).Exp(tau, big.NewInt(int64(i)), nil)
+		var newPoint curve.G2Affine
+		newPoint.ScalarMultiplicationBase(tau_exp)
 		ret2[i] = newPoint
-		point2 = &newPoint
 	}
 
 	t_x := buildTx(n)
 	var element fr.Element
-	element.SetInt64(int64(r))
+	element.SetBigInt(tau)
 	t_tau := t_x.Eval(&element)
 
-	var s bls12381.Scalar 
-	s.SetUint64(t_tau.Uint64())
+	var t_tau_bigInt big.Int 
+	t_tau.BigInt(&t_tau_bigInt)
 
-	// Generate Upsilon
-	point1 = bls12381.G1Generator()
-	var p bls12381.G1
-	p.ScalarMult(&s, point1)
-	ret3[0] = p 
+	var point curve.G1Affine
+	point.ScalarMultiplicationBase(&t_tau_bigInt)
+	ret3[0] = point
 	for i:=1; i < n2; i++ {
-		var newPoint bls12381.G1 
-		newPoint.ScalarMult(&tau, &p)
+		tau_exp := new(big.Int).Exp(tau, big.NewInt(int64(i)), nil)
+		tmp := new(big.Int).Mul(tau_exp, &t_tau_bigInt)
+		var newPoint curve.G1Affine
+		newPoint.ScalarMultiplicationBase(tmp)
 		ret3[i] = newPoint
-		p = newPoint
 	} 
 
 	return ret1, ret2, ret3
