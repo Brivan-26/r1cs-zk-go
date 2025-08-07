@@ -10,28 +10,45 @@ func R1CSToQAP(L, R, O, W matrix.Matrix) (polynomial.Polynomial, polynomial.Poly
 	// safety check 
 	matricesSanityChecks(L, R, O, W)
 	
-	u_x := interpolateFromMatrix(L, W)
-	v_x := interpolateFromMatrix(R, W)
-	w_x := interpolateFromMatrix(O, W)
+	u_s := interpolateFromMatrixCols(L)
+	v_s := interpolateFromMatrixCols(R)
+	w_s := interpolateFromMatrixCols(O)
+
+	u_x := buildPolyFromInterpolationAndWitness(u_s, W)
+	v_x := buildPolyFromInterpolationAndWitness(v_s, W)
+	w_x := buildPolyFromInterpolationAndWitness(w_s, W)
 	t_x := buildTx(L.Rows())
 	h_x := buildHx(u_x, v_x, w_x, t_x)
 
 	return u_x, v_x, w_x, t_x, h_x
 }
 
-func interpolateFromMatrix(matrix, w matrix.Matrix) polynomial.Polynomial {
-	witness := toFr(w)
-	
-	var zeroElement fr.Element 
-	zeroElement.SetZero()
-	p_x := polynomial.Polynomial{zeroElement}
-
+func interpolateFromMatrixCols(matrix matrix.Matrix) []polynomial.Polynomial {
 	num_cols := matrix.Cols()
+	ret := make([]polynomial.Polynomial, num_cols)
+
 	for i:=0; i < num_cols; i++ {
 		col := getColInFr(matrix, i)
 		p_i := polynomial.InterpolateOnRange(col)
-		p_i.ScaleInPlace(&witness[i])
+		ret[i] = p_i		
+	}
 
+	return ret
+}
+
+func buildPolyFromInterpolationAndWitness(polys []polynomial.Polynomial, w matrix.Matrix) polynomial.Polynomial {
+	witness := toFr(w)
+
+	if len(polys) != len(witness) {
+		panic("Malformed Polynomials")
+	}
+
+	var zeroElement fr.Element 
+	zeroElement.SetZero()
+	p_x := polynomial.Polynomial{zeroElement}
+	for i:=0; i < len(polys); i++ {
+		p_i := polys[i]
+		p_i.ScaleInPlace(&witness[i])
 		p_x.Add(p_x, p_i)
 	}
 
