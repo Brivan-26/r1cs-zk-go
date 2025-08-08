@@ -188,9 +188,9 @@ The implementation of this step is available at the [commit 3dc8997](https://git
 A critical missing component in our construction is ensuring that the prover must derive the points $A$, $B$, and $C$ from the QAP of the arithmetic circuit. It is now time to address this.
 
 To enforce this requirement, we must connect the QAP (the polynomials $u(x)$, $v(x)$, and $w(x)$) to secret values that the prover neither knows nor controls. These secrets must also play a role in the verification step. Let’s see what happens if we add $\theta$ and $\eta$ to the left side of the QAP equation:
-$$
+```math
 \left( \boxed{\theta} + \sum_{i=1}^m a_i u_i(x) \right) \cdot \left( \boxed{\eta} + \sum_{i=1}^m a_i v_i(x) \right)
-$$
+```
 Expanding, we obtain:
 ```math
 =\, \theta \eta 
@@ -227,8 +227,12 @@ Here, $\cdot$ denotes the pairing operation, $+$ is the group operation in $G_{1
 However, the prover cannot compute $C$ directly since the terms $\alpha \sum_{i=1}^m a_i v_i(\tau)$ and $\beta \sum_{i=1}^m a_i u_i(\tau)$ would yield points in $G_{12}$, whereas $C$ must be a point in $G_1$. Therefore, the trusted setup must pre-compute the "problematic" polynomial terms in advance. After some algebraic manipulation, we have:
 ```math
 \alpha \sum_{i=1}^m a_i v_i(\tau)
-+ \beta \sum_{i=1}^m a_i u_i(\tau) + \sum_{i=1}^m a_i w_i(\tau) + h(\tau) t(\tau) \\ 
-= \sum_{i=1}^m \left( \alpha a_i v_i(\tau) + \beta a_i u_i(\tau) + a_i w_i(\tau) \right) \\
++ \beta \sum_{i=1}^m a_i u_i(\tau) + \sum_{i=1}^m a_i w_i(\tau) + h(\tau) t(\tau)
+```
+```math
+= \sum_{i=1}^m \left( \alpha a_i v_i(\tau) + \beta a_i u_i(\tau) + a_i w_i(\tau) \right)
+```
+```math
 = \sum_{i=1}^m a_i \boxed{ \alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau)}
 ```
 The trusted setup can generate $m$ polynomials evaluated at $\tau$ as indicated by the boxed term, and the prover can use these to compute the final sum.
