@@ -49,11 +49,11 @@ func main() {
 		},
 	)
 
-	
+	alpha, beta, SRS1, SRS2, SRS3, psi := generateSRS(L.Rows(), L.Rows()-1, L.Rows(), L, R, O) // TODO Double check n1, n2, n3 inputs
 
-	A, B, C := prove(L, R, O)
+	A, B, C := prove(L, R, O, SRS1, SRS3, SRS2, alpha, beta, psi)
 
-	if !verifyProof(A, C, B) {
+	if !verifyProof(A, C, alpha, B, beta) {
 		panic("Invalid proof!")
 	}
 

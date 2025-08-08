@@ -178,8 +178,95 @@ pairing(A, B) == pairing(C, G2)
 
 With this, we have achieved succinctness! Regardless of the number of constraints, the prover sends only three points, and the verifier needs to verify only a single pairing!
 
-The implementation of this step is available at the [HEAD commit](https://github.com/Brivan-26/r1cs-zk-go)
+The implementation of this step is available at the [commit 3dc8997](https://github.com/Brivan-26/r1cs-zk-go/tree/3dc899776ede0028bef939398d1fa0f2a59edf92)
 
 ### What we need to solve in next steps
 1. Given that the verifier checks only the pairing of three points, the prover could send arbitrary points $A$, $B$, $C$ that satisfy the pairing, and the verifier has no guarantee that these points were derived from the generated QAP.
 2. Our proof system does not yet support public inputs, so the verifier has no means of injecting public inputs.
+
+## Step 3: Preventing Forged Proofs by Enforcing the Use of QAP
+A critical missing component in our construction is ensuring that the prover must derive the points $A$, $B$, and $C$ from the QAP of the arithmetic circuit. It is now time to address this.
+
+To enforce this requirement, we must connect the QAP (the polynomials $u(x)$, $v(x)$, and $w(x)$) to secret values that the prover neither knows nor controls. These secrets must also play a role in the verification step. Let’s see what happens if we add $\theta$ and $\eta$ to the left side of the QAP equation:
+$$
+\left( \boxed{\theta} + \sum_{i=1}^m a_i u_i(x) \right) \cdot \left( \boxed{\eta} + \sum_{i=1}^m a_i v_i(x) \right)
+$$
+Expanding, we obtain:
+```math
+=\, \theta \eta 
++ \theta \sum_{i=1}^m a_i v_i(x) 
++ \eta \sum_{i=1}^m a_i u_i(x)
++ \boxed{
+    \sum_{i=1}^m a_i w_i(x) + h(x)t(x)
+}
+```
+The rightmost boxed term is equivalent to the right side of the QAP equation. Thus, our new, expanded QAP equation is:
+```math
+\left( \theta + \sum_{i=1}^m a_i u_i(x) \right)
+\left( \eta + \sum_{i=1}^m a_i v_i(x) \right)
+=
+\theta \eta 
++ \theta \sum_{i=1}^m a_i v_i(x)
++ \eta \sum_{i=1}^m a_i u_i(x)
++ \sum_{i=1}^m a_i w_i(x) + h(x)t(x)
+```
+If we encode $\theta$ and $\eta$ as elements of $G_1$ and $G_2$ (denoted $\alpha$ and $\beta$), our verification formula becomes:
+```math
+A \cdot B \stackrel{?}{=} \alpha \cdot \beta + C \cdot G_2
+```
+Here, $\cdot$ denotes the pairing operation, $+$ is the group operation in $G_{12}$, and:
+```math
+\underbrace{\left(\alpha + \sum_{i=1}^m a_i u_i(\tau)\right)}_{A}
+\underbrace{\left(\beta + \sum_{i=1}^m a_i v_i(\tau)\right)}_{B}
+= \alpha \cdot \beta
++ \underbrace{\alpha \sum_{i=1}^m a_i v_i(\tau)
++ \beta \sum_{i=1}^m a_i u_i(\tau)
++ \left(\sum_{i=1}^m a_i w_i(\tau) + h(\tau) t(\tau)\right)}_{C}
+\cdot G_2
+```
+However, the prover cannot compute $C$ directly since the terms $\alpha \sum_{i=1}^m a_i v_i(\tau)$ and $\beta \sum_{i=1}^m a_i u_i(\tau)$ would yield points in $G_{12}$, whereas $C$ must be a point in $G_1$. Therefore, the trusted setup must pre-compute the "problematic" polynomial terms in advance. After some algebraic manipulation, we have:
+```math
+\alpha \sum_{i=1}^m a_i v_i(\tau)
++ \beta \sum_{i=1}^m a_i u_i(\tau) + \sum_{i=1}^m a_i w_i(\tau) + h(\tau) t(\tau) \\ 
+= \sum_{i=1}^m \left( \alpha a_i v_i(\tau) + \beta a_i u_i(\tau) + a_i w_i(\tau) \right) \\
+= \sum_{i=1}^m a_i \boxed{ \alpha v_i(\tau) + \beta u_i(\tau) + w_i(\tau)}
+```
+The trusted setup can generate $m$ polynomials evaluated at $\tau$ as indicated by the boxed term, and the prover can use these to compute the final sum.
+
+Our trusted setup is now updated to produce and return:
+```math
+\begin{aligned}
+&\alpha, \beta \\
+&[\tau^{n-1} G_1, \tau^{n-2} G_1, \ldots, \tau G_1, G_1] = [\Omega_{n-1},\, \Omega_{n-2},\, \ldots,\, \Omega_{1},\, G_{1}] \\
+&[\tau^{n-1} G_2, \tau^{n-2} G_2, \ldots, \tau G_2, G_2] = [\Theta_{n-1},\, \Theta_{n-2},\, \ldots,\, \Theta_{1},\, G_{2}] \\
+&[\tau^{n-2} t(\tau), \tau^{n-3} t(\tau), \ldots, \tau t(\tau), t(\tau)] = [\Upsilon_{n-2},\, \Upsilon_{n-3},\, \ldots,\, \Upsilon_{1},\, \Upsilon_{0}] \\
+&\left[
+\begin{array}{l}
+\Psi_1 = (\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau)) G_1 \\
+\Psi_2 = (\alpha v_2(\tau) + \beta u_2(\tau) + w_2(\tau)) G_1 \\
+\vdots \\
+\Psi_m = (\alpha v_m(\tau) + \beta u_m(\tau) + w_m(\tau)) G_1
+\end{array}
+\right]
+\end{aligned}
+```
+The prover then computes $A$, $B$, and $C$ as follows:
+```math
+A = \alpha + \langle [u_{n-1}, u_{n-2}, \ldots, u_{1}, u_{0}],\ [\Omega_{n-1}, \Omega_{n-2}, \ldots, \Omega_1, G_1] \rangle \\[1em]
+```
+```math
+B = \beta + \langle [v_{n-1}, v_{n-2}, \ldots, v_{1}, v_{0}],\ [\Theta_{n-1}, \Theta_{n-2}, \ldots, \Theta_1, G_2] \rangle \\[1em]
+```
+```math
+C = \sum_{i=1}^{m} a_i [\Psi_i]_1 + \langle [h_{n-2}, h_{n-3}, \ldots, h_1, h_0],\ [\Upsilon_{n-2}, \Upsilon_{n-3}, \ldots, \Upsilon_1, \Upsilon_0] \rangle
+```
+The verifier checks that:
+```math
+pairing(A, B) == pairing(\alpha, \beta) + pairing(C, G2)
+```
+Now, the prover is compelled to derive valid points from the QAP, since the discrete logs of $\alpha$ and $\beta$ are embedded in the polynomials within $\Psi_i$—and thus, $C$—which are beyond the prover’s control.
+
+The implementation of this step is available at the [HEAD commit](https://github.com/Brivan-26/r1cs-zk-go)
+
+### What we need to solve in next steps
+1. Our proof system still does not yet support public inputs, so the verifier has no means of injecting public inputs.
