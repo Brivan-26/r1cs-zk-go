@@ -270,7 +270,88 @@ pairing(A, B) == pairing(\alpha, \beta) + pairing(C, G2)
 ```
 Now, the prover is compelled to derive valid points from the QAP, since the discrete logs of $\alpha$ and $\beta$ are embedded in the polynomials within $\Psi_i$—and thus, $C$—which are beyond the prover’s control.
 
-The implementation of this step is available at the [HEAD commit](https://github.com/Brivan-26/r1cs-zk-go)
+The implementation of this step is available at the [commt ebdf27e](https://github.com/Brivan-26/r1cs-zk-go/tree/ebdf27e42f273940f290e9ec546ef53602dfd245)
 
 ### What we need to solve in next steps
 1. Our proof system still does not yet support public inputs, so the verifier has no means of injecting public inputs.
+
+## Step 4: Introducing Public Inputs
+By convention, we assume that the public portion of the witness vector consists of the first $l$ elements. For the verifier to confirm that these public values were actually used in the computation, they must replicate the corresponding portion of the prover's computation related to these public inputs.
+
+The prover computes:
+```math 
+A = \alpha + \sum_{i=1}^m a_i u_i(\tau)
+```
+```math
+B = \beta + \sum_{i=1}^m a_i v_i(\tau)
+```
+```math 
+C = \sum_{i=l+1}^{m} a_i \Psi_i + h(\tau) t(\tau)
+```
+Note that only computation of $C$ changes, with the prover using terms from $l+1$ to $m$. 
+
+The verifier then computes the sum corresponding to the public portion:
+```math
+X = \sum_{i=1}^{l} a_i \Psi_i
+```
+And verifies:
+```math 
+pairing(A, B) == pairing(\alpha, \beta) + pairing(X,G_2) +  pairing(C, G_2)
+```
+However, nothing prevents the prover from improperly reusing the public terms $\Psi_1$ to $\_Psi_l$ in the private computation. For example, suppose the witness vector has size 4 and the first 2 elements are public. Expanding the verification formula yields:
+```math 
+A \cdot B \stackrel{?}{=} \alpha \cdot \beta + (a_1 \Psi_1 + a_2 \Psi_2) \cdot G_2 +  (a_3 \Psi_3 + a_4 \Psi_4 + h(\tau) t(\tau)) \cdot G_2
+```
+TThe prover could maliciously choose the public portion of the witness as $a_l = [l_1, 0]$ and shift the zero-valued part into the private portion as follows:
+```math 
+A \cdot B \stackrel{?}{=} \alpha \cdot \beta + (a_1 \Psi_1 + 0 \Psi_2) \cdot G_2 +  (a_2 \Psi_2 + a_3 \Psi_3 + a_4 \Psi_4 + h(\tau) t(\tau)) \cdot G_2
+```
+This equation would still verify successfully, but the witness may not actually satisfy the original constraints. Therefore, we must ensure the prover cannot use public computation terms $\Psi_1$ to $\Psi_l$ in the private computation.
+
+To address this, the trusted setup introduces two scalars $\gamma$ and $\delta$ dividing public terms by $\gamma$ and private terms by $\delta$. Since $h(\tau) t(\tau)$ belongs to the private computation, it is also divided by $\delta$.
+
+
+Our updated trusted setup outputs:
+```math
+\begin{aligned}
+&\alpha, \beta, \delta, \gamma \\
+&[\tau^{n-1} G_1, \tau^{n-2} G_1, \ldots, \tau G_1, G_1] = [\Omega_{n-1},\, \Omega_{n-2},\, \ldots,\, \Omega_{1},\, G_{1}] \\
+&[\tau^{n-1} G_2, \tau^{n-2} G_2, \ldots, \tau G_2, G_2] = [\Theta_{n-1},\, \Theta_{n-2},\, \ldots,\, \Theta_{1},\, G_{2}] \\
+&\frac{[\tau^{n-2} t(\tau), \tau^{n-3} t(\tau), \ldots, \tau t(\tau), t(\tau)]}{\delta} = [\Upsilon_{n-2},\, \Upsilon_{n-3},\, \ldots,\, \Upsilon_{1},\, \Upsilon_{0}] \\
+&\left[
+\begin{array}{l}
+\Psi_1 = \frac{(\alpha v_1(\tau) + \beta u_1(\tau) + w_1(\tau))}{\gamma} G_1 \\
+\Psi_2 = \frac{(\alpha v_2(\tau) + \beta u_2(\tau) + w_2(\tau))}{\gamma} G_1 \\
+\vdots \\
+\Psi_l = \frac{(\alpha v_l(\tau) + \beta u_l(\tau) + w_l(\tau))}{\gamma} G_1 \\
+\Psi_{l+1} = \frac{(\alpha v_{l+1}(\tau) + \beta u_{l+1}(\tau) + w_{l+1}(\tau))}{\delta} G_1 \\
+\vdots \\
+
+\Psi_m = \frac{(\alpha v_m(\tau) + \beta u_m(\tau) + w_m(\tau))}{\delta} G_1
+\end{array}
+\right]
+\end{aligned}
+```
+This ensures that public and private computations are separated at the algebraic level (having different denominators), making it impossible for the prover to interchange them.
+
+The prover’s computations remain as:
+```math 
+A = \alpha + \sum_{i=1}^m a_i u_i(\tau)
+```
+```math
+B = \beta + \sum_{i=1}^m a_i v_i(\tau)
+```
+```math 
+C = \sum_{i=l+1}^{m} a_i \Psi_i + h(\tau) t(\tau)
+```
+The verifier’s check now incorporates pairings with $[\gamma]_2$ and $[\delta]_2$ to cancel the respective denominators:
+```math
+A \cdot B \stackrel{?}{=} \alpha \cdot \beta + [X]_1 \cdot [\gamma]_2 + C \cdot [\delta]_2
+```
+Where $[X]_1$, $[\gamma]_2$ and $[\delta]_2$  are the elliptic curve points corresponding to the public portion, $\gamma$, and $\delta$ respectively.
+
+Implementation of this step is available at the [HEAD commit](https://github.com/Brivan-26/r1cs-zk-go)
+
+
+### What we need to solve in next steps
+Our ZK construction is almost complete. One problem remains: the scheme is not yet truly *zero-knowledge*. If an attacker can guess the witness vector—possible when the set of valid inputs is small—they could confirm their guess by comparing their generated proof with the actual proof.

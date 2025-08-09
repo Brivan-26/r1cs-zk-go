@@ -7,8 +7,9 @@ import (
 	// "math/rand"
     // "time"
 	"math/big"
+	"fmt"
 )
-func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2Affine, []curve.G1Affine, []curve.G2Affine, []curve.G1Affine, []curve.G1Affine){
+func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2Affine, curve.G2Affine, curve.G2Affine, []curve.G1Affine, []curve.G2Affine, []curve.G1Affine, []curve.G1Affine, int){
 	_, _, g1Gen, g2Gen := curve.Generators()
 	// ABSOLUTELY NOT SAFE RANDOM GENERATION
 	// rand.Seed(time.Now().UnixNano())
@@ -72,7 +73,22 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 	// generate beta
 	var beta curve.G2Affine
 	beta.ScalarMultiplicationBase(b)
-	
+
+	// ABSOLUTELY NOT SAFE RANDOM GENERATION
+	gamma := big.NewInt(int64(750)) 
+	teta := big.NewInt(int64(2000))
+
+	var gammaG curve.G2Affine
+	gammaG.ScalarMultiplicationBase(gamma)
+
+	var tetaG curve.G2Affine
+	tetaG.ScalarMultiplicationBase(teta)
+
+	publicInputs, err := LoadPublicInputsFromJSON()
+	if err != nil {
+		panic(fmt.Sprintf("Could not load public input: %v", err))
+	}
+
 	// Generate Psi
 	u_s := interpolateFromMatrixCols(L)
 	v_s := interpolateFromMatrixCols(R)
@@ -88,15 +104,22 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 		u_tau := u_i.Eval(&element)
 		w_tau := w_i.Eval(&element)
 
-		var alpha_fr, beta_fr, mul1, mul2, tmp_sum, sum fr.Element
+		var alpha_fr, beta_fr, mul1, mul2, tmp_sum, sum, gamma_fr, teta_fr fr.Element
 		alpha_fr.SetBigInt(a)
 		beta_fr.SetBigInt(b)
+		gamma_fr.SetBigInt(gamma)
+		teta_fr.SetBigInt(teta)
 
 		mul1.Mul(&alpha_fr, &v_tau)
 		mul2.Mul(&beta_fr, &u_tau)
 
 		tmp_sum.Add(&mul1, &mul2)
 		sum.Add(&tmp_sum, &w_tau)
+		if i < len(publicInputs) {
+			sum.Div(&sum, &gamma_fr)
+		}else {
+			sum.Div(&sum, &teta_fr)
+		}
 
 		scalar := frElementToBigInt(sum)
 		var point curve.G1Affine
@@ -105,6 +128,6 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 		psi[i] = point
 	}
 
-	return alpha, beta, omega, theta, upsilon, psi
+	return alpha, beta, gammaG, tetaG, omega, theta, upsilon, psi, len(publicInputs)
 
 }

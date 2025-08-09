@@ -49,11 +49,14 @@ func main() {
 		},
 	)
 
-	alpha, beta, SRS1, SRS2, SRS3, psi := generateSRS(L.Rows(), L.Rows()-1, L.Rows(), L, R, O) // TODO Double check n1, n2, n3 inputs
+	alpha, beta, gamma, teta, SRS1, SRS2, SRS3, psi, publicInputsSize := generateSRS(L.Rows(), L.Rows()-1, L.Rows(), L, R, O) // TODO Double check n1, n2, n3 inputs
 
-	A, B, C := prove(L, R, O, SRS1, SRS3, SRS2, alpha, beta, psi)
+	proverPsi := psi[publicInputsSize:]
+	verifierPsi := psi[:publicInputsSize]
 
-	if !verifyProof(A, C, alpha, B, beta) {
+	A, B, C := prove(L, R, O, SRS1, SRS3, SRS2, alpha, beta, proverPsi)
+
+	if !verifyProof(A, C, alpha, B, beta, gamma, teta, verifierPsi) {
 		panic("Invalid proof!")
 	}
 
