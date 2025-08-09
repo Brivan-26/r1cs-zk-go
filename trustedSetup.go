@@ -4,17 +4,15 @@ import (
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"gitlab.com/oelmekki/matrix"
-	// "math/rand"
-    // "time"
 	"math/big"
 	"fmt"
 )
 func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2Affine, curve.G2Affine, curve.G2Affine, []curve.G1Affine, []curve.G2Affine, []curve.G1Affine, []curve.G1Affine, int){
 	_, _, g1Gen, g2Gen := curve.Generators()
-	// ABSOLUTELY NOT SAFE RANDOM GENERATION
-	// rand.Seed(time.Now().UnixNano())
-	// tau := big.NewInt(int64(rand.Intn(1000000000000)))
-	tau := big.NewInt(int64(10))
+	
+	var element fr.Element
+	element.MustSetRandom()
+	tau := frElementToBigInt(element)
 
 
 	omega := make([]curve.G1Affine, n1)
@@ -24,7 +22,7 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 	// Generate Omega
 	omega[0] = g1Gen
 	for i:=1; i < n1; i++ {
-		tau_exp := new(big.Int).Exp(tau, big.NewInt(int64(i)), nil)
+		tau_exp := new(big.Int).Exp(&tau, big.NewInt(int64(i)), nil)
 		var newPoint curve.G1Affine
 		newPoint.ScalarMultiplicationBase(tau_exp)
 		omega[i] = newPoint
@@ -33,15 +31,14 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 	// Generate Theta
 	theta[0] = g2Gen
 	for i:=1; i < n1; i++ {
-		tau_exp := new(big.Int).Exp(tau, big.NewInt(int64(i)), nil)
+		tau_exp := new(big.Int).Exp(&tau, big.NewInt(int64(i)), nil)
 		var newPoint curve.G2Affine
 		newPoint.ScalarMultiplicationBase(tau_exp)
 		theta[i] = newPoint
 	}
 
 	t_x := buildTx(n)
-	var element fr.Element
-	element.SetBigInt(tau)
+	
 	t_tau := t_x.Eval(&element)
 
 	var t_tau_bigInt big.Int 
@@ -51,28 +48,26 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 	point.ScalarMultiplicationBase(&t_tau_bigInt)
 	upsilon[0] = point
 	for i:=1; i < n2; i++ {
-		tau_exp := new(big.Int).Exp(tau, big.NewInt(int64(i)), nil)
+		tau_exp := new(big.Int).Exp(&tau, big.NewInt(int64(i)), nil)
 		tmp := new(big.Int).Mul(tau_exp, &t_tau_bigInt)
 		var newPoint curve.G1Affine
 		newPoint.ScalarMultiplicationBase(tmp)
 		upsilon[i] = newPoint
 	} 
-	
-	
-	// ABSOLUTELY NOT SAFE RANDOM GENERATION
-	// a := big.NewInt(int64(rand.Intn(10000))) 
-	// b := big.NewInt(int64(rand.Intn(10000)))
 
-	a := big.NewInt(int64(20)) 
-	b := big.NewInt(int64(21))
+	var alpha_fr, beta_fr fr.Element 
+	alpha_fr.MustSetRandom()
+	beta_fr.MustSetRandom()
 
+	a := frElementToBigInt(alpha_fr)
+	b := frElementToBigInt(beta_fr)
 	// generate alpha
 	var alpha curve.G1Affine
-	alpha.ScalarMultiplicationBase(a)
+	alpha.ScalarMultiplicationBase(&a)
 	
 	// generate beta
 	var beta curve.G2Affine
-	beta.ScalarMultiplicationBase(b)
+	beta.ScalarMultiplicationBase(&b)
 
 	// ABSOLUTELY NOT SAFE RANDOM GENERATION
 	gamma := big.NewInt(int64(750)) 
@@ -104,9 +99,7 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 		u_tau := u_i.Eval(&element)
 		w_tau := w_i.Eval(&element)
 
-		var alpha_fr, beta_fr, mul1, mul2, tmp_sum, sum, gamma_fr, teta_fr fr.Element
-		alpha_fr.SetBigInt(a)
-		beta_fr.SetBigInt(b)
+		var mul1, mul2, tmp_sum, sum, gamma_fr, teta_fr fr.Element
 		gamma_fr.SetBigInt(gamma)
 		teta_fr.SetBigInt(teta)
 
