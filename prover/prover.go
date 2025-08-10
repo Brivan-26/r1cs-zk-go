@@ -1,6 +1,7 @@
 package prover 
 
 import (
+	"r1cs-zk-go/keys"
 	"r1cs-zk-go/r1cs"
 	"r1cs-zk-go/witness"
 	"r1cs-zk-go/utils"
@@ -11,7 +12,14 @@ import (
 	"fmt"
 )
 
-func Prove(SRS1, SRS3 []curve.G1Affine, SRS2 []curve.G2Affine, alpha curve.G1Affine, beta curve.G2Affine, psi []curve.G1Affine) (curve.G1Affine, curve.G2Affine, curve.G1Affine) {
+func Prove() {
+	pkJSON := loadProvingKey()
+	SRS1 := keys.JsonToG1AffineSlice(pkJSON.SRS1)
+	SRS3 := keys.JsonToG1AffineSlice(pkJSON.SRS3)
+	SRS2 := keys.JsonToG2AffineSlice(pkJSON.SRS2)
+	alpha := keys.JsonToG1Affine(pkJSON.Alpha)
+	beta := keys.JsonToG2Affine(pkJSON.Beta)
+	psi := keys.JsonToG1AffineSlice(pkJSON.ProverPsi)
 	
 	L, R, O, err := r1cs.LoadR1CSFromJSON()
 	if err != nil {
@@ -36,7 +44,7 @@ func Prove(SRS1, SRS3 []curve.G1Affine, SRS2 []curve.G2Affine, alpha curve.G1Aff
 	B := EvalRAtSRS2(v_x, SRS2, beta)
 	C := EvalOutputAtSRS13(psi, h_x, SRS3, W, publicInputsSize)	
 
-	return A, B, C
+	keys.BuildProof(A, C, B)
 }
 
 func matricesSanityChecks(L, R, O, W matrix.Matrix) bool {

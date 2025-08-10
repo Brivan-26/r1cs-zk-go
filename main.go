@@ -32,14 +32,13 @@ func main() {
 	// R = |0 0 0 1|
 	//     |0 0 1 0|
 	
-	alpha, beta, gamma, teta, SRS1, SRS2, SRS3, psi, publicInputsSize := trusted_setup.GenerateSRS()
+	trusted_setup.GenerateSRS()
 
-	proverPsi := psi[publicInputsSize:]
-	verifierPsi := psi[:publicInputsSize]
 
-	A, B, C := prover.Prove(SRS1, SRS3, SRS2, alpha, beta, proverPsi)
+	prover.Prove()
+	
 
-	if !verifier.VerifyProof(A, C, alpha, B, beta, gamma, teta, verifierPsi) {
+	if !verifier.VerifyProof() {
 		panic("Invalid proof!")
 	}
 

@@ -1,13 +1,26 @@
 package verifier
 
 import (
+	"r1cs-zk-go/keys"
 	"r1cs-zk-go/witness"
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"fmt"
 	"math/big"
 )
 
-func VerifyProof(A, C, alpha curve.G1Affine, B, beta, gamma, teta curve.G2Affine, psi []curve.G1Affine) bool {
+func VerifyProof() bool {
+	vkJSON := loadVerifyingKey()
+	alpha := keys.JsonToG1Affine(vkJSON.Alpha)
+	beta := keys.JsonToG2Affine(vkJSON.Beta)
+	gamma := keys.JsonToG2Affine(vkJSON.Gamma)
+	teta := keys.JsonToG2Affine(vkJSON.Teta)
+	psi := keys.JsonToG1AffineSlice(vkJSON.VerifierPsi)
+
+	proofJSON := loadProof()
+	A := keys.JsonToG1Affine(proofJSON.A)
+	B := keys.JsonToG2Affine(proofJSON.B)
+	C := keys.JsonToG1Affine(proofJSON.C)
+
 	publicInputs, err := witness.LoadPublicInputsFromJSON()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to load public witness: %v", err))
@@ -60,3 +73,4 @@ func calculateX(psi []curve.G1Affine, publicInputs []int) curve.G1Affine {
 
 	return X
 }
+

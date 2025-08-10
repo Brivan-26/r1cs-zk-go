@@ -1,6 +1,7 @@
 package trusted_setup 
 
 import (
+	"r1cs-zk-go/keys"
 	"r1cs-zk-go/r1cs"
 	"r1cs-zk-go/witness"
 	"r1cs-zk-go/utils"
@@ -9,7 +10,7 @@ import (
 	"math/big"
 	"fmt"
 )
-func GenerateSRS() (curve.G1Affine, curve.G2Affine, curve.G2Affine, curve.G2Affine, []curve.G1Affine, []curve.G2Affine, []curve.G1Affine, []curve.G1Affine, int){
+func GenerateSRS() (){
 
 	L, R, O, err := r1cs.LoadR1CSFromJSON()
 	if err != nil {
@@ -134,6 +135,11 @@ func GenerateSRS() (curve.G1Affine, curve.G2Affine, curve.G2Affine, curve.G2Affi
 		psi[i] = point
 	}
 
-	return alpha, beta, gammaG, tetaG, omega, theta, upsilon, psi, len(publicInputs)
+	publicInputsSize := len(publicInputs)
 
+	proverPsi := psi[publicInputsSize:]
+	keys.BuildPk(omega, upsilon, proverPsi, theta, alpha, beta)
+
+	verifierPsi := psi[:publicInputsSize]
+	keys.BuildVk(alpha, verifierPsi, beta, gammaG, tetaG)
 }
