@@ -37,8 +37,7 @@ func Prove() {
 	}
 	u_x, v_x, _, _, h_x := R1CSToQAP(L, R, O, W)
 
-	
-	// TODO add sanity checks on SRSs, that they power was generated successfully...
+	// TODO add sanity checks on SRSs, that there powers were generated successfully...
 	
 	A := EvalLAtSRS1(u_x, SRS1, alpha)
 	B := EvalRAtSRS2(v_x, SRS2, beta)
@@ -74,7 +73,6 @@ func EvalRAtSRS2(v_x polynomial.Polynomial, srs []curve.G2Affine, beta curve.G2A
 	if len(v_x) != len(srs) {
 		panic("Incorrect SRS")
 	}
-
 	coeffs := v_x
 	var B curve.G2Affine
 	for i:=0; i < len(coeffs); i++ {
@@ -101,6 +99,9 @@ func EvalOutputAtSRS13(psi []curve.G1Affine, h_x polynomial.Polynomial, srs3 []c
 		C.Add(&C, &tmp)
 	}
 
+	if len(h_x) != len(srs3) {
+		panic("Missmatch between polynomial H and SRS3")
+	}
 	coeffs := h_x
 	for i:=0; i < len(coeffs); i++ {
 		coeff := utils.FrElementToBigInt(coeffs[i])

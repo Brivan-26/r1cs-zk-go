@@ -72,3 +72,26 @@ func MultiplyPolys(p1, p2 polynomial.Polynomial) polynomial.Polynomial {
     }
     return product
 }
+
+func SubtractPolys(p1, p2 polynomial.Polynomial) polynomial.Polynomial {
+    maxLen := len(p1)
+    if len(p2) > maxLen {
+        maxLen = len(p2)
+    }
+    
+    result := make(polynomial.Polynomial, maxLen)
+    
+    for i := 0; i < maxLen; i++ {
+        if i < len(p1) {
+            result[i].Set(&p1[i])
+        } else {
+            result[i].SetZero()
+        }
+        
+        if i < len(p2) {
+            result[i].Sub(&result[i], &p2[i])
+        }
+    }
+    
+    return result
+}

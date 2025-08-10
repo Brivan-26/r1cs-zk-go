@@ -125,10 +125,8 @@ func normalizePoly(p polynomial.Polynomial) polynomial.Polynomial {
 
 func buildHx(u_x, v_x, w_x, t_x polynomial.Polynomial) polynomial.Polynomial {
 	uv_x := utils.MultiplyPolys(u_x, v_x)
-	var uvMinusw_x polynomial.Polynomial
-	uvMinusw_x.Sub(uv_x, w_x)
+	uvMinusw_x := utils.SubtractPolys(uv_x, w_x)
 	// reminder should always be zero for valid witness, // TODO include check for this
 	h_x, _ := DividePolys(uvMinusw_x, t_x)
-
 	return h_x
 }

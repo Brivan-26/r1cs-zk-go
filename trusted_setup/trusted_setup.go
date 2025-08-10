@@ -17,10 +17,9 @@ func GenerateSRS() (){
 		panic(fmt.Sprintf("Failed to load R1CS: %v", err))
 	}
 
-	// TODO Double check n1, n2, n inputs
-	n1 := L.Rows()
-	n2 := L.Rows() - 1
-	n := L.Rows()
+	n1 := max(L.Rows(), 1)
+	n2 := max(L.Rows() - 1, 1)
+	n := max(L.Rows(), 1)
 	
 	_, _, g1Gen, g2Gen := curve.Generators()
 	
@@ -51,8 +50,7 @@ func GenerateSRS() (){
 		theta[i] = newPoint
 	}
 
-	t_x := utils.BuildTx(n)
-	
+	t_x := utils.BuildTx(n)	
 	t_tau := t_x.Eval(&element)
 
 	var t_tau_bigInt big.Int 
@@ -142,4 +140,12 @@ func GenerateSRS() (){
 
 	verifierPsi := psi[:publicInputsSize]
 	keys.BuildVk(alpha, verifierPsi, beta, gammaG, tetaG)
+}
+
+func max(a, b int) int{
+	if a > b {
+		return a
+	}else {
+		return b
+	}
 }
