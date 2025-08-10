@@ -4,6 +4,8 @@ import (
 	"r1cs-zk-go/keys"
 	"encoding/json"
 	"io/ioutil"
+	"os"
+	"fmt"
 )
 
 func loadProvingKey() keys.ProvingKey {
@@ -11,12 +13,14 @@ func loadProvingKey() keys.ProvingKey {
 	
 	jsonData, err := ioutil.ReadFile("pk.json")
 	if err != nil {
-		panic("failed to read pk.json")
+		fmt.Println("Could not read pk.json, make sure you have ran the trusted setup")
+		os.Exit(1)
 	}
 	
 	err = json.Unmarshal(jsonData, &pk)
 	if err != nil {
-		panic("failed to parse pk.json")
+		fmt.Println("failed to parse pk.json")
+		os.Exit(1)
 	}
 	
 	return pk
