@@ -1,13 +1,14 @@
-package main 
+package verifier
 
 import (
+	"r1cs-zk-go/witness"
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"fmt"
 	"math/big"
 )
 
-func verifyProof(A, C, alpha curve.G1Affine, B, beta, gamma, teta curve.G2Affine, psi []curve.G1Affine) bool {
-	publicInputs, err := LoadPublicInputsFromJSON()
+func VerifyProof(A, C, alpha curve.G1Affine, B, beta, gamma, teta curve.G2Affine, psi []curve.G1Affine) bool {
+	publicInputs, err := witness.LoadPublicInputsFromJSON()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to load public witness: %v", err))
 	}

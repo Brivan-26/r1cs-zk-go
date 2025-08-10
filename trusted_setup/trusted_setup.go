@@ -1,18 +1,31 @@
-package main 
+package trusted_setup 
 
 import (
+	"r1cs-zk-go/r1cs"
+	"r1cs-zk-go/witness"
+	"r1cs-zk-go/utils"
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
-	"gitlab.com/oelmekki/matrix"
 	"math/big"
 	"fmt"
 )
-func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2Affine, curve.G2Affine, curve.G2Affine, []curve.G1Affine, []curve.G2Affine, []curve.G1Affine, []curve.G1Affine, int){
+func GenerateSRS() (curve.G1Affine, curve.G2Affine, curve.G2Affine, curve.G2Affine, []curve.G1Affine, []curve.G2Affine, []curve.G1Affine, []curve.G1Affine, int){
+
+	L, R, O, err := r1cs.LoadR1CSFromJSON()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load R1CS: %v", err))
+	}
+
+	// TODO Double check n1, n2, n inputs
+	n1 := L.Rows()
+	n2 := L.Rows() - 1
+	n := L.Rows()
+	
 	_, _, g1Gen, g2Gen := curve.Generators()
 	
 	var element fr.Element
 	element.MustSetRandom()
-	tau := frElementToBigInt(element)
+	tau := utils.FrElementToBigInt(element)
 
 
 	omega := make([]curve.G1Affine, n1)
@@ -37,7 +50,7 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 		theta[i] = newPoint
 	}
 
-	t_x := buildTx(n)
+	t_x := utils.BuildTx(n)
 	
 	t_tau := t_x.Eval(&element)
 
@@ -59,8 +72,8 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 	alpha_fr.MustSetRandom()
 	beta_fr.MustSetRandom()
 
-	a := frElementToBigInt(alpha_fr)
-	b := frElementToBigInt(beta_fr)
+	a := utils.FrElementToBigInt(alpha_fr)
+	b := utils.FrElementToBigInt(beta_fr)
 	// generate alpha
 	var alpha curve.G1Affine
 	alpha.ScalarMultiplicationBase(&a)
@@ -79,15 +92,15 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 	var tetaG curve.G2Affine
 	tetaG.ScalarMultiplicationBase(teta)
 
-	publicInputs, err := LoadPublicInputsFromJSON()
+	publicInputs, err := witness.LoadPublicInputsFromJSON()
 	if err != nil {
 		panic(fmt.Sprintf("Could not load public input: %v", err))
 	}
 
 	// Generate Psi
-	u_s := interpolateFromMatrixCols(L)
-	v_s := interpolateFromMatrixCols(R)
-	w_s := interpolateFromMatrixCols(O)
+	u_s := utils.InterpolateFromMatrixCols(L)
+	v_s := utils.InterpolateFromMatrixCols(R)
+	w_s := utils.InterpolateFromMatrixCols(O)
 
 	psi := make([]curve.G1Affine, L.Cols())
 	for i:=0; i < len(psi); i++ {
@@ -114,7 +127,7 @@ func generateSRS(n1, n2, n int, L, R, O matrix.Matrix) (curve.G1Affine, curve.G2
 			sum.Div(&sum, &teta_fr)
 		}
 
-		scalar := frElementToBigInt(sum)
+		scalar := utils.FrElementToBigInt(sum)
 		var point curve.G1Affine
 		point.ScalarMultiplicationBase(&scalar)
 		

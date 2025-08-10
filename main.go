@@ -1,7 +1,9 @@
 package main 
 
 import (
-	"gitlab.com/oelmekki/matrix"
+	"r1cs-zk-go/trusted_setup"
+	"r1cs-zk-go/prover"
+	"r1cs-zk-go/verifier"
 	"fmt"
 )
 
@@ -30,33 +32,14 @@ func main() {
 	// R = |0 0 0 1|
 	//     |0 0 1 0|
 	
-	L, _ := matrix.Build(
-		matrix.Builder{
-			matrix.Row{0, 0, 0, 1},
-			matrix.Row{0, 0, 0, 1},
-		},
-	)
-	R, _ := matrix.Build(
-		matrix.Builder{
-			matrix.Row{0, 0, 0, 1},
-			matrix.Row{0, 0, 1, 0},
-		},
-	)
-	O, _ := matrix.Build(
-		matrix.Builder{
-			matrix.Row{0, 0, 1, 0},
-			matrix.Row{-5, 1, 0, -5},
-		},
-	)
-
-	alpha, beta, gamma, teta, SRS1, SRS2, SRS3, psi, publicInputsSize := generateSRS(L.Rows(), L.Rows()-1, L.Rows(), L, R, O) // TODO Double check n1, n2, n3 inputs
+	alpha, beta, gamma, teta, SRS1, SRS2, SRS3, psi, publicInputsSize := trusted_setup.GenerateSRS()
 
 	proverPsi := psi[publicInputsSize:]
 	verifierPsi := psi[:publicInputsSize]
 
-	A, B, C := prove(L, R, O, SRS1, SRS3, SRS2, alpha, beta, proverPsi)
+	A, B, C := prover.Prove(SRS1, SRS3, SRS2, alpha, beta, proverPsi)
 
-	if !verifyProof(A, C, alpha, B, beta, gamma, teta, verifierPsi) {
+	if !verifier.VerifyProof(A, C, alpha, B, beta, gamma, teta, verifierPsi) {
 		panic("Invalid proof!")
 	}
 

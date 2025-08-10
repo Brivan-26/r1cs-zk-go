@@ -1,16 +1,24 @@
-package main 
+package prover 
 
 import (
+	"r1cs-zk-go/r1cs"
+	"r1cs-zk-go/witness"
+	"r1cs-zk-go/utils"
 	"gitlab.com/oelmekki/matrix"
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-381"
-	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr/polynomial"
 	"math/big"
 	"fmt"
 )
 
-func prove(L, R, O matrix.Matrix, SRS1, SRS3 []curve.G1Affine, SRS2 []curve.G2Affine, alpha curve.G1Affine, beta curve.G2Affine, psi []curve.G1Affine) (curve.G1Affine, curve.G2Affine, curve.G1Affine) {
-	W, publicInputsSize, err := LoadWitnessFromJSON()
+func Prove(SRS1, SRS3 []curve.G1Affine, SRS2 []curve.G2Affine, alpha curve.G1Affine, beta curve.G2Affine, psi []curve.G1Affine) (curve.G1Affine, curve.G2Affine, curve.G1Affine) {
+	
+	L, R, O, err := r1cs.LoadR1CSFromJSON()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load R1CS: %v", err))
+	}
+	
+	W, publicInputsSize, err := witness.LoadWitnessFromJSON()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to load witness: %v", err))
 	}
@@ -43,7 +51,7 @@ func EvalLAtSRS1(u_x polynomial.Polynomial, srs []curve.G1Affine, alpha curve.G1
 	coeffs := u_x
 	var A curve.G1Affine
 	for i:=0; i < len(coeffs); i++ {
-		coeff := frElementToBigInt(coeffs[i])
+		coeff := utils.FrElementToBigInt(coeffs[i])
 		var tmp curve.G1Affine 
 		tmp.ScalarMultiplication(&srs[i], &coeff)
 		A.Add(&A, &tmp)
@@ -62,7 +70,7 @@ func EvalRAtSRS2(v_x polynomial.Polynomial, srs []curve.G2Affine, beta curve.G2A
 	coeffs := v_x
 	var B curve.G2Affine
 	for i:=0; i < len(coeffs); i++ {
-		coeff := frElementToBigInt(coeffs[i])
+		coeff := utils.FrElementToBigInt(coeffs[i])
 		var tmp curve.G2Affine 
 		tmp.ScalarMultiplication(&srs[i], &coeff)
 		B.Add(&B, &tmp)
@@ -87,7 +95,7 @@ func EvalOutputAtSRS13(psi []curve.G1Affine, h_x polynomial.Polynomial, srs3 []c
 
 	coeffs := h_x
 	for i:=0; i < len(coeffs); i++ {
-		coeff := frElementToBigInt(coeffs[i])
+		coeff := utils.FrElementToBigInt(coeffs[i])
 		var tmp curve.G1Affine
 		tmp.ScalarMultiplication(&srs3[i], &coeff)
 		C.Add(&C, &tmp)
@@ -96,9 +104,4 @@ func EvalOutputAtSRS13(psi []curve.G1Affine, h_x polynomial.Polynomial, srs3 []c
 	return C
 }
 
-func frElementToBigInt(e fr.Element) big.Int {
-    var ret big.Int 
-	e.BigInt(&ret)
 
-	return ret
-}
