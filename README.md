@@ -1,6 +1,14 @@
-# WIP
+# Groth16 Implementation for any R1CS
 
-The following construction is not yet complete and is work-in-progress. Eventually, we will be there where we have a fully-working ZK construction.
+This repository represents an implementation of Groth16 ZK Snark construction for any R1CS. To generate/verify a proof, you only need to provide your problem statement ecoded as R1CS in `r1cs.json` and a valid witness in `witness.json`. The usage is as follows:
+```bash
+go build  &&
+./r1cs-zk-go setup  # Run the trusted setup. The pk and vk are saved into json files
+./r1cs-zk-go prove  # generating a proof using 'pk.json' for 'r1cs.json' and 'witness.json'. The proof is saved into 'proof.json'
+./r1cs-zk-go verify # reads the proof from 'proof.json' and verify it using 'vk.json'
+```
+
+The construction was built incrementally, in 4 steps. The reasoning behind each step and its commit code is explained below. The last commit is the final construction.
 
 > Example and reasoning are inspired from my journey reading [ZK-Book](https://rareskills.io/zk-book)
 
